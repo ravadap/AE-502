@@ -30,18 +30,33 @@ function [v1,v2]=lambert_solver(mu, r1, r2, dt, trajectory)
     A = sin(df)*sqrt((r1_mag*r2_mag)/(1-cos(df)));
 
     % Set tolerance and ratio
-    tol = 10e-10;
+    tol = 1e-10;
     ratio = 1;
-    z = 1;
+    z = 0;
 
-    % Solve for z iteratively
-    % z < 0 hyperbola, z = 0 parabola, z > 1 ellipse
+    val = 0;
+    while val <= 0
+        z = z + 1;
+        val = F(mu, r1_mag, r2_mag, dt, A, z);
+    end
+
+  
+    iter = 0;
     while abs(ratio) > tol
+        iter = iter + 1;
         F_z = F(mu, r1_mag, r2_mag, dt, A, z);
         dF_z = (1/(2*sqrt(y(r1_mag, r2_mag, A, z)*C(z)^5)))*((2*C(z)*dS(z)-3*dC(z)*S(z))*y(r1_mag, r2_mag, A, z)^2+(A*C(z)^(5/2)+3*C(z)*S(z)*y(r1_mag, r2_mag, A, z))*dy(A,z));
         ratio = F_z/dF_z;
         z = z-ratio;
+
+        if iter > 1000
+            v1 = nan;
+            v2 = v1;
+            return
+        end
     end
+
+    z = real(z);
     
     % Calculate y
     y_z = y(r1_mag, r2_mag, A, z); 
@@ -54,5 +69,10 @@ function [v1,v2]=lambert_solver(mu, r1, r2, dt, trajectory)
     % Calculate v1 and v2
     v1 = (1/g)*(r2-f*r1);
     v2 = (1/g)*(gdot*r2-r1);
+
+%     if iter > 100
+%         v1 = [0,0,0];
+%         v2 = v1;
+%     end
 
 end

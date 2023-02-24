@@ -4,7 +4,7 @@ function xi = kepler_universal_anomaly(mu, dt, r0, vr0, alpha)
     xi = sqrt(mu)*abs(alpha)*dt;
 
     % Set tolerance and initialize ratio
-    tol = 10^-8;
+    tol = 1e-8;
     ratio = 1;
 
     % Newton's Method

@@ -1,8 +1,8 @@
 function [r,v] = r_v(mu, dt, r0, v0)
     
     % magnitude of r0 and v0
-    r0_mag = sqrt(dot(r0, r0));
-    v0_mag = sqrt(dot(v0, v0));
+    r0_mag = norm(r0);
+    v0_mag = norm(v0);
 
     % radial component of velocity
     vr0 = dot(r0, v0)/r0_mag;
