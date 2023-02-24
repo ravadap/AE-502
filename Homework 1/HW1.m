@@ -61,116 +61,120 @@ for i=1:length(dt_1I)
     [r_traj_1I(i,:),v_traj_1I(i,:)] = r_v(mu_sun, tof, r1I, v1I);
 end
 
-dv_1I = zeros(length(dt_1I), length(dt_e1));
-
-for i=1:length(dt_1I) % arrival
-    for j=1:length(dt_e1) % departure
-        [i,j]
-        TOF = days(dt_1I(i)-dt_e1(j))/(TU/86400);
-        if TOF > 0
-            traj_type = 'prograde';
-            [v1,v2] = lambert_solver(mu_sun, r_traj_e1(j,:), r_traj_1I(i,:), TOF, traj_type);
-            if ~isnan(v1(1)) && ~isnan(v2(1))
-                dv_1I(i,j) = norm(v1 - v_traj_e1(j,:));% + norm(v_traj_1I(i,:) - v2);
-            end
-        end
-    end
-end
+[dv_1I_r, dv_1I_f] = get_dv_grid(dt_1I, dt_e1, mu_sun, r_traj_1I, r_traj_e1, v_traj_1I, v_traj_e1, 'prograde', TU);
 
 %% Problem 4
 
-% % Earth propagation for 2I
-% 
-% dt_e2 = datetime(2017,1,1):days(1):datetime(2020,7,1);
-% 
-% r_traj_e2 = zeros(length(dt_e2), 3);
-% v_traj_e2 = zeros(length(dt_e2), 3);
-% 
-% for i=1:length(dt_e2)
-%     tof = days(dt_e2(i)-dt_e2(1))/(TU/86400);
-%     [r_traj_e2(i,:),v_traj_e2(i,:)] = r_v(mu_sun, tof, rE, vE);
-% end
-% 
-% % Testing 2I propagation wrt to sun
-% 
-% dt_2I = datetime(2019,6,1):days(1):datetime(2022,1,1);
-% 
-% r_traj_2I = zeros(length(dt_2I), 3);
-% v_traj_2I = zeros(length(dt_2I), 3);
-% 
-% for i=1:length(dt_2I)
-%     tof = days(dt_2I(i)-dt_e2(1))/(TU/86400);
-%     [r_traj_2I(i,:),v_traj_2I(i,:)] = r_v(mu_sun, tof, r2I, v2I);
-% end
-% 
-% dv_2I = zeros(length(dt_2I), length(dt_e2));
-% 
-% for i=1:length(dt_2I) % arrival
-%     for j=1:length(dt_e2) % departure
-%         [i,j]
-%         TOF = days(dt_2I(i)-dt_e2(j))/(TU/86400);
-%         if TOF > 0
-%             traj_type = 'prograde';
-%             [v1,v2] = lambert_solver(mu_sun, r_traj_e2(j,:), r_traj_2I(i,:), TOF, traj_type);
-%             if ~isnan(v1(1)) && ~isnan(v2(1))
-%                 dv_2I(i,j) = norm(v1 - v_traj_e2(j,:));% + norm(v_traj_2I(i,:) - v2);
-%             end
-%         end
-%     end
-% end
+% Earth propagation for 2I
+
+dt_e2 = datetime(2017,1,1):days(1):datetime(2020,7,1);
+
+r_traj_e2 = zeros(length(dt_e2), 3);
+v_traj_e2 = zeros(length(dt_e2), 3);
+
+for i=1:length(dt_e2)
+    tof = days(dt_e2(i)-dt_e2(1))/(TU/86400);
+    [r_traj_e2(i,:),v_traj_e2(i,:)] = r_v(mu_sun, tof, rE, vE);
+end
+
+% Testing 2I propagation wrt to sun
+
+dt_2I = datetime(2019,6,1):days(1):datetime(2022,1,1);
+
+r_traj_2I = zeros(length(dt_2I), 3);
+v_traj_2I = zeros(length(dt_2I), 3);
+
+for i=1:length(dt_2I)
+    tof = days(dt_2I(i)-dt_e2(1))/(TU/86400);
+    [r_traj_2I(i,:),v_traj_2I(i,:)] = r_v(mu_sun, tof, r2I, v2I);
+end
+
+[dv_2I_r, dv_2I_f] = get_dv_grid(dt_2I, dt_e2, mu_sun, r_traj_2I, r_traj_e2, v_traj_2I, v_traj_e2, 'prograde', TU);
+
+%% Find 1I and 2I orbital elements
+
+[a1,e1,i1,w1,OM1,f1]=rv2elm_PR(mu_sun, r1I, v1I)
+[a2,e2,i2,w2,OM2,f2]=rv2elm_PR(mu_sun, r2I, v2I)
+
+%% Plotting
 
 % Plotting test sanity check
-% figure(1)
-% hold on 
-% grid on
-% axis equal
-% % plot3(r_traj_e1(:,1), r_traj_e1(:,2), r_traj_e1(:,3))
-% % plot3(r_traj_e1(end,1), r_traj_e1(end,2), r_traj_e1(end,3),'.','MarkerSize',10)
-% plot3(0,0,0,'.','MarkerSize',20)
-% % plot3(r_traj_1I(:,1), r_traj_1I(:,2), r_traj_1I(:,3))
-% % plot3(r_traj_1I(end,1), r_traj_1I(end,2), r_traj_1I(end,3), '.','MarkerSize',10)
-% % % plot3(r_traj_e1(j,1), r_traj_e1(j,2), r_traj_e1(j,3), '.', 'MarkerSize',5)
-% % % plot3(r_traj_1I(i,1), r_traj_1I(i,2), r_traj_1I(i,3), '.', 'MarkerSize',5)
-% plot3(r_traj_e2(:,1), r_traj_e2(:,2), r_traj_e2(:,3))
-% plot3(r_traj_2I(:,1), r_traj_2I(:,2), r_traj_2I(:,3))
-% % plot3(0,0,0,'.','MarkerSize',10)
-% % 
+figure(1)
+hold on 
+grid on
+axis equal
+plot3(0,0,0,'.','MarkerSize',30,'Color','yellow','DisplayName','Sun')
+plot3(r_traj_e1(:,1), r_traj_e1(:,2), r_traj_e1(:,3), 'Color','blue','DisplayName','Earth Trajectory')
+plot3(r_traj_e1(end,1), r_traj_e1(end,2), r_traj_e1(end,3),'.','MarkerSize',20, 'Color','cyan','DisplayName','Earth Terminal Position')
+plot3(r_traj_1I(:,1), r_traj_1I(:,2), r_traj_1I(:,3), 'Color','red','DisplayName','Oumuamua Trajectory')
+plot3(r_traj_1I(end,1), r_traj_1I(end,2), r_traj_1I(end,3), '.','MarkerSize',10,'Color','black','DisplayName','Oumuamua Terminal Position')
+legend
+xlabel('X Position [DU]')
+ylabel('Y Position [DU]')
+zlabel('Z Position [DU]')
+title('Earth and Oumuamua Trajectory in Canonical Units')
 
-% figure(1)
-% dv_kms = dv*DU/TU;
-% % dv_kms = dv_kms(dv_kms<50);
-% dv_kms(dv_kms>20) = 0;
-% contourf(dv_kms,'edgecolor','none');
-% colorbar
-% % set(gca,'XLim',[1 365])
-% % set(gca, 'YLim', [1,760-212])
-% 
-figure(4)
-dv_kms = dv_1I*DU/TU;
-dv_kms(dv_kms>20) = NaN;
-idx = find(dv_kms==0);
-dv_kms(idx) = NaN;
-surf(dt_e1, dt_1I, dv_kms, 'EdgeColor', 'Interp', 'FaceColor', 'Interp')
+figure(2)
+hold on 
+grid on
+axis equal
+plot3(0,0,0,'.','MarkerSize',30,'Color','yellow','DisplayName','Sun')
+plot3(r_traj_e2(:,1), r_traj_e2(:,2), r_traj_e2(:,3), 'Color','blue','DisplayName','Earth Trajectory')
+plot3(r_traj_e2(end,1), r_traj_e2(end,2), r_traj_e2(end,3),'.','MarkerSize',20,'Color','cyan','DisplayName','Earth Terminal Position')
+plot3(r_traj_2I(:,1), r_traj_2I(:,2), r_traj_2I(:,3),'Color','magenta','DisplayName','Borisov Trajectory')
+plot3(r_traj_2I(end,1), r_traj_2I(end,2), r_traj_2I(end,3), '.','MarkerSize',10,'Color','black','DisplayName','Borisov Terminal Position')
+legend
+xlabel('X Position [DU]')
+ylabel('Y Position [DU]')
+zlabel('Z Position [DU]')
+title('Earth and Borisov Trajectory in Canonical Units')
+
+figure(3)
+dv_kms_1I_rendezvous = dv_1I_r*DU/TU;
+dv_kms_1I_rendezvous(dv_kms_1I_rendezvous>50) = NaN;
+surf(dt_e1, dt_1I, dv_kms_1I_rendezvous, 'EdgeColor', 'Interp', 'FaceColor', 'Interp')
 colormap('jet')
+c = colorbar;
+c.Label.String = '\Delta V (km/s)';
+xlabel('Earth Departure Date')
+ylabel('1I Oumuamua Arrival Date')
+title('Earth to Oumuamua Prograde Rendezvous')
+view([0 90])
+
+figure(4)
+dv_kms_1I_flyby = dv_1I_f*DU/TU;
+dv_kms_1I_flyby(dv_kms_1I_flyby>20) = NaN;
+surf(dt_e1, dt_1I, dv_kms_1I_flyby, 'EdgeColor', 'Interp', 'FaceColor', 'Interp')
+colormap('jet')
+c = colorbar;
+c.Label.String = '\Delta V (km/s)';
+xlabel('Earth Departure Date')
+ylabel('1I Oumuamua Arrival Date')
+title('Earth to Oumuamua Prograde Flyby')
+view([0 90])
+
+figure(5)
+dv_kms_2I_rendezvous = dv_2I_r*DU/TU;
+dv_kms_2I_rendezvous(dv_kms_2I_rendezvous>60) = NaN;
+surf(dt_e2, dt_2I, dv_kms_2I_rendezvous, 'EdgeColor', 'Interp', 'FaceColor', 'Interp')
+colormap('jet')
+c = colorbar;
+c.Label.String = '\Delta V (km/s)';
+xlabel('Earth Departure Date')
+ylabel('2I Borisov Arrival Date')
+title('Earth to Borisov Prograde Rendezvous')
 colorbar
 view([0 90])
-% set(gca,'XLim',[1 365])
-% set(gca, 'YLim', [1,760-212])
 
-%xtickformat("yyyy-MM-dd")
-
-% s_date = datenum('01-01-2017');
-% e_date = datenum('12-31-2017');
-
-% dateaxis('x', 12, datetime(2017,1,1))
-
-% datetick('x',3)
-
-% datetick('y',3)
-
-% dateaxis('x',3,datetime(2017,1,1))
-% xticks(months(['jan', 'feb']))
-
-% figure(2)
-% contour(dv)
-% colorbar
+figure(6)
+dv_kms_2I_flyby = dv_2I_f*DU/TU;
+dv_kms_2I_flyby(dv_kms_2I_flyby>20) = NaN;
+surf(dt_e2, dt_2I, dv_kms_2I_flyby, 'EdgeColor', 'Interp', 'FaceColor', 'Interp')
+colormap('jet')
+c = colorbar;
+c.Label.String = '\Delta V (km/s)';
+xlabel('Earth Departure Date')
+ylabel('2I Borisov Arrival Date')
+title('Earth to Borisov Prograde Flyby')
+colorbar
+view([0 90])
