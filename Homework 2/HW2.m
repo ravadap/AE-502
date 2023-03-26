@@ -1,0 +1,279 @@
+clc; clear; 
+
+%% Problem 1
+
+J2 = 0.00108;
+R = 6370; % km
+mu = 3.986 * 10^5; % km^3/s^2
+
+% where J2 perturbation is "frozen" or rate of change of w is 0
+critical_i_1 = acosd(sqrt(1/5))
+critical_1_2 = 180 - critical_i_1
+
+% periapse altitude r_p > 600 km
+r_p = 600 + R; % km
+
+% orbital period
+% T = (24/3)*60*60; % seconds
+T = 8*60*60;
+
+% semi-major axis
+a = (T*sqrt(mu)/(2*pi))^(2/3)
+
+% eccentricity
+e = 1-r_p/a
+
+% mean motion
+n = 2*pi/T; % second
+
+% change in ascending node 
+OM_dot = @(ec) -3/2 * n * J2 * (R/a)^2 * cosd(critical_i_1)/(1-ec^2)^2;
+OM_drift_earth = OM_dot(e)
+
+%% Problem 2
+
+J2 = 0.00196;
+R = 3390; % km
+mu = 4.282 * 10^4; % km^3/s^2
+
+% where J2 perturbation is "frozen" or rate of change of w is 0
+critical_i_1 = acosd(sqrt(1/5));
+critical_1_2 = 180 - critical_i_1;
+
+% periapse altitude r_p > 400 km
+r_p = 400 + R; % km
+
+% orbital period
+T = 24*60*60 + 39*60 + 35; % seconds
+
+% semi-major axis
+a = (T*sqrt(mu)/(2*pi))^(2/3)
+
+% eccentricity
+e = 1-r_p/a
+
+% mean motion
+n = 2*pi/T; % second
+
+% change in ascending node 
+OM_dot = @(ec) -3/2 * n * J2 * (R/a)^2 * cosd(critical_i_1)/(1-ec^2)^2;
+OM_drift_mars = OM_dot(e)
+
+%% Problem 3
+% code perturbed equations of motion
+% plot time evolution of orbital elements to see impact of J2
+
+% initial orbital parameters
+a = 26600; %km
+i = 1.10654; %rad
+e = 0.74;
+w = deg2rad(5); %deg
+OM = deg2rad(90); %deg
+M0 = deg2rad(10); %deg
+h = sqrt(a*mu*(1-e^2));
+
+% true anomaly
+tol = 1e-12;
+f = get_f_from_M(M0, e, tol);
+
+% constants
+J2 = 0.00108;
+R = 6370; % km
+mu = 3.986 * 10^5; % km^3/s^2
+
+T = 2*pi*sqrt(a^3/mu); % period
+
+% convert elements to cartesian
+[r,v] = elm2rv_PR(a,e,i,w,OM,f,mu);
+state = vertcat(r,v);
+
+% use ODE45 to integrate from t0 to tf
+t0 = 0;
+tf = 100*24*60*60; % days => seconds
+tspan = linspace(t0, tf, 100000);
+options = odeset('RelTol',tol, 'AbsTol',tol);
+
+[t,y] = ode89(@special_perturbation_J2, tspan, state, options, mu, R, J2);
+
+rt = [y(:,1) y(:,2) y(:,3)]';
+vt = [y(:,4) y(:,5) y(:,6)]';
+
+for j=1:length(tspan)
+    [at(j), et(j), it(j), wt(j), OMt(j), ft(j)] = rv2elm_PR(mu, rt(:,j), vt(:,j));
+end
+
+figure(1)
+hold on
+plot3(rt(1,:)/R, rt(2,:)/R, rt(3,:)/R)
+% plot3(0,0,0,'.','MarkerSize',1000,'Color','green','DisplayName','Earth')
+[X,Y,Z] = sphere;
+hsurf = surf(X,Y,Z);
+set(hsurf,'FaceColor',[0 1 0],'EdgeColor',[0 1 0]);
+xlabel('X-axis (Earth Radii)')
+ylabel('Y-axis (Earth Radii)')
+zlabel('Z-axis (Earth Radii)')
+grid on
+grid minor
+axis tight
+axis equal
+
+figure(2)
+subplot(6,1,1)
+plot(t/86400, at/R)
+title('Semi-Major Axis (Earth Radii)') 
+xlabel('Days')
+grid on
+grid minor
+axis tight
+
+subplot(6,1,2)
+plot(t/86400, rad2deg(it))
+title('Inclination (Degrees)') 
+xlabel('Days')
+grid on
+grid minor
+axis tight
+
+subplot(6,1,3)
+plot(t/86400, et)
+title('Eccentricity') 
+xlabel('Days')
+grid on
+grid minor
+axis tight
+
+subplot(6,1,4)
+plot(t/86400, rad2deg(wt))
+title('Argument of Perigee (Degrees)') 
+xlabel('Days')
+grid on
+grid minor
+axis tight
+
+subplot(6,1,5)
+plot(t/86400, rad2deg(OMt))
+title('Right Ascension (Degrees)') 
+xlabel('Days')
+grid on
+grid minor
+axis tight
+
+subplot(6,1,6)
+plot(t/86400, rad2deg(ft))
+title('True Anomaly (Degrees)') 
+xlabel('Days')
+grid on
+grid minor
+axis tight
+
+% % Gauss variational equations
+% 
+% % initial orbital elements
+% y0 = [e i w OM h f]';
+% 
+% % use ODE45 to integrate from t0 to tf
+% t0 = 0;
+% tf = 100*24*60*60; % days => seconds
+% tspan = linspace(t0, tf, 5000);
+% options = odeset('RelTol',tol, 'AbsTol',tol);
+% 
+% [t,y] = ode45(@gauss_variational_equations, tspan, y0, options);
+% 
+% % unpack orbital element time history
+% et = y(:,1);
+% it = y(:,2);
+% wt = y(:,3);
+% OMt = y(:,4);
+% ht = y(:,5);
+% ft = y(:,6);
+% at = ht.^2./(mu*(1-et.^2));
+% 
+% figure(2)
+% subplot(5,1,1)
+% plot(t/86400, at-a)
+% title('Semi-Major Axis (km)') 
+% xlabel('Days')
+% grid on
+% grid minor
+% axis tight
+% 
+% subplot(5,1,2)
+% plot(t/86400, rad2deg(it-i))
+% title('Inclination (Degrees)') 
+% xlabel('Days')
+% grid on
+% grid minor
+% axis tight
+% 
+% subplot(5,1,3)
+% plot(t/86400, et-e)
+% title('Eccentricity') 
+% xlabel('Days')
+% grid on
+% grid minor
+% axis tight
+% 
+% subplot(5,1,4)
+% plot(t/86400, wt-w)
+% title('Argument of Perigee (Degrees)') 
+% xlabel('Days')
+% grid on
+% grid minor
+% axis tight
+% 
+% subplot(5,1,5)
+% plot(t/86400, rad2deg(OMt-OM))
+% title('Right Ascension (Degrees)') 
+% xlabel('Days')
+% grid on
+% grid minor
+% axis tight
+% 
+function f = get_f_from_M(M, e, tol)
+    E = M;
+    ratio = 1;
+
+    while abs(ratio) > tol
+        f = E - e*sin(E) - M;
+        fp = 1 - e*cos(E);
+        ratio = f/fp;
+        E = E - ratio;
+    end
+
+    f = 2*atan(sqrt((1+e)/(1-e))*tan(E/2));
+end
+% 
+% function dydt = gauss_variational_equations(t,y)
+% 
+%     % constants
+%     mu = 398600;
+%     R = 6370;
+%     J2 = 1082.63e-6;
+%     
+%     % unpack orbital elements
+%     e = y(1);
+%     i = y(2);
+%     w = y(3);
+%     % OM = y(4);
+%     h = y(5);
+%     f = y(6);
+% 
+%     r = h^2/(mu*(1+e*cos(f)));
+%     u = w + f;
+% 
+%     % Gauss variational equations orbital elements rate of change
+%     dhdt = -(3/2)*(J2*mu*R^2/r^3)*sin(i)^2*sin(2*u);
+% 
+%     dedt = (3/2)*(J2*mu*R^2/(h*r^3))*((h^2/(mu*r))*sin(f)*(3*sin(i)^2*sin(u)^2-1)-sin(2*u)*sin(i)^2*((2+e*cos(f))*cos(f)+e));
+% 
+%     dfdt = (h/r^2) + (3/2)*(J2*mu*R^2/(e*h*r^3))*((h^2/(mu*r))*cos(f)*(3*sin(i)^2*sin(u)^2-1)+(2+e*cos(f))*sin(2*u)*sin(i)^2*sin(f));
+% 
+%     dOMdt = -3*(J2*mu*R^2/(h*r^3))*sin(u)^2*cos(i);
+% 
+%     didt = -(3/4)*(J2*mu*R^2/(h*r^3))*sin(2*u)*sin(2*i);
+% 
+%     dwdt = (3/2)*(J2*mu*R^2/(e*h*r^3))*((h^2/(mu*r))*cos(f)*(1-3*sin(i)^2*sin(u)^2)-(2+e*cos(f))*sin(2*u)*sin(i)^2*sin(f)+2*e*cos(i)^2*sin(u)^2);
+% 
+%     dydt = [dedt didt dwdt dOMdt dhdt dfdt]';
+% end
+%  
