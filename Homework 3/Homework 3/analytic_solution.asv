@@ -1,0 +1,73 @@
+function [kepler_state, rv_state] = analytic_solution(mu, init_vals, tol, perturb)
+    % unpack initial values
+    a = init_vals(1);
+    e = init_vals(2);
+    i = init_vals(3);
+    l0 = init_vals(4);
+    g0 = init_vals(5);
+    h0 = init_vals(6);
+
+    % calculate other initial values
+    L0 = sqrt(a);
+    G0 = L0 * sqrt(1-e^2);
+    H0 = G0 * cosd(i);
+
+    % convert inititial variables to new coordinates
+    L0 = L0 - perturb*H0*L0^3;
+    l0 = l0 + 3*perturb*l0*H0*l0^2;
+    h0 = h0 + perturb*l0*L0^3;
+
+    % time span
+    t0 = 0;
+    tf = 100; % 100 TU
+    tspan = linspace(t0, tf, 10000);
+    
+    % Prime values
+    Lp = L0;
+    Gp = G0;
+    Hp = H0;
+    lp = 1/(2*Lp^2) * tspan + l0; lp = lp';
+    gp = g0;
+    hp = h0;
+    
+    G = Gp * ones(size(lp));
+    H = Hp * ones(size(lp));
+    g = gp * ones(size(lp));
+
+    syms H_sym L_sym w_sym Lp_sym
+
+    sols = solve(-H_sym*L_sym^3*w_sym + L_sym -Lp_sym == 0, L_sym, 'MaxDegree', 3);
+    sols(1)
+    sols(2)
+    sols(3)
+    vpa(subs())
+    
+    L = (1 - sqrt(1-8*perturb*H.*Lp)) ./ (4*perturb*H);
+    l = lp./(1+3*perturb.*L.^2.*H);
+    h = hp - perturb*l.*L.^3;
+    
+    % Convert to Keplerian 
+    a = L.^2;
+    e = sqrt(1-(G./L).^2);
+    i = acos(H./G); % rad
+    M = l;
+    w = g;
+    OM = h-g;
+    
+    f = zeros(size(M)); % in rad
+    for j=1:length(M)
+        f(j) = get_f_from_M(M(j), e(j), tol);
+    end
+
+    kepler_state = [a, e, i, w, OM, f];
+    
+    rt = zeros(length(tspan), 3);
+    vt = zeros(length(tspan), 3);
+    
+    for j=1:length(tspan)
+        [rt(j,:), vt(j,:)] = elm2rv_PR(a(j), e(j), i(j), w(j), OM(j), f(j), mu);
+    end
+
+    rv_state = [rt, vt];
+
+end

@@ -1,0 +1,262 @@
+clc; clear;
+format longg
+
+% Homework file to produce deliverables for project 3
+
+%% Problem 2
+
+% In canonical units
+mu = 1;
+
+tol = 1e-12;
+
+% Initial orbital parameters
+a = 1;
+e = 0.5; 
+i = 45; %degrees
+
+% Choose
+l0 = 0;
+g0 = 0;
+h0 = 0;
+
+init_vals = [a, e, i, l0, g0, h0];
+perturb = 0.01;
+
+[kepler_perturb, rv_perturb] = perturbation_solution(mu, init_vals, tol, perturb);
+% 
+% a_perturb = kepler_perturb(:,1);
+% e_perturb = kepler_perturb(:,2);
+% i_perturb = kepler_perturb(:,3);
+% w_perturb = kepler_perturb(:,4);
+% OM_perturb = kepler_perturb(:,5);
+% f_perturb = kepler_perturb(:,6);
+
+% figure(1)
+% hold on
+% % plot3(rt(:,1), rt(:,2), rt(:,3))
+% plot3(rv_perturb(:,1), rv_perturb(:,2), rv_perturb(:,3))
+% plot3(0,0,0,'.','MarkerSize',560,'Color','green','DisplayName','Earth')
+% xlabel('X-axis (DU)')
+% ylabel('Y-axis (DU)')
+% zlabel('Z-axis (DU)')
+% grid on
+% grid minor
+% axis tight
+
+%% Problem 3
+
+[kepler_analytic, rv_analytic] = analytic_solution(mu, init_vals, tol, perturb);
+% 
+% a_analytic = kepler_analytic(:,1);
+% e_analytic = kepler_analytic(:,2);
+% i_analytic = kepler_analytic(:,3);
+% w_analytic = kepler_analytic(:,4);
+% OM_analytic = kepler_analytic(:,5);
+% f_analytic = kepler_analytic(:,6);
+
+% figure(2)
+% hold on
+% % plot3(rt(:,1), rt(:,2), rt(:,3))
+% plot3(rv_analytic(:,1), rv_analytic(:,2), rv_analytic(:,3))
+% plot3(0,0,0,'.','MarkerSize',560,'Color','green','DisplayName','Earth')
+% xlabel('X-axis (DU)')
+% ylabel('Y-axis (DU)')
+% zlabel('Z-axis (DU)')
+% grid on
+% grid minor
+% axis tight
+
+figure(4)
+hold on
+plot3(rv_perturb(:,1), rv_perturb(:,2), rv_perturb(:,3), 'DisplayName','Perturbation Solution')
+% plot3(rv_analytic(:,1), rv_analytic(:,2), rv_analytic(:,3), 'DisplayName','Analytic Solution')
+[X,Y,Z] = sphere;
+val = 0.3; X = X * val; Y = Y * val; Z = Z * val;
+hsurf = surf(X,Y,Z,'DisplayName','Central Body (Not to Scale)');
+set(hsurf,'FaceColor',[0 1 0],'EdgeColor',[0 1 0]);
+xlabel('X-axis (DU)')
+ylabel('Y-axis (DU)')
+zlabel('Z-axis (DU)')
+grid on
+grid minor
+axis tight
+axis equal
+legend
+%% Convert to Modified Equinoctial Elements
+% Generate 20 random initial conditions
+%init_vals = [a, e, i, l0, g0, h0];
+
+num = 20;
+perturbs = [0.02, 0.1, 0.5];
+
+l0 = rand(1,num)*2*pi;
+g0 = rand(1,num)*2*pi;
+h0 = rand(1,num)*2*pi;
+
+% l0 = linspace(0,2*pi,num);
+% g0 = linspace(0,2*pi,num);
+% h0 = linspace(0,2*pi,num);
+
+fig_num = 5;
+
+for jj=5:7
+    for ii=1:num
+        init_vals = [a, e, i, l0(ii), g0(ii), h0(ii)];
+    
+        [kepler_perturb, rv_perturb] = perturbation_solution(mu, init_vals, tol, perturbs(jj-fig_num+1));
+    
+        a_perturb = kepler_perturb(:,1);
+        e_perturb = kepler_perturb(:,2);
+        i_perturb = kepler_perturb(:,3);
+        w_perturb = kepler_perturb(:,4);
+        OM_perturb = kepler_perturb(:,5);
+        f_perturb = kepler_perturb(:,6);
+    
+        [kepler_analytic, rv_analytic] = analytic_solution(mu, init_vals, tol, perturb);
+    
+        a_analytic = kepler_analytic(:,1);
+        e_analytic = kepler_analytic(:,2);
+        i_analytic = kepler_analytic(:,3);
+        w_analytic = kepler_analytic(:,4);
+        OM_analytic = kepler_analytic(:,5);
+        f_analytic = kepler_analytic(:,6);
+    
+        [h_p, k_p, p_p, q_p] = elm2MEE(e_perturb, i_perturb, w_perturb, OM_perturb);
+        [h_a, k_a, p_a, q_a] = elm2MEE(e_analytic, i_analytic, w_analytic, OM_analytic);
+    
+        figure(jj)
+    
+        subplot(2,2,1)
+        hold on
+        title('MEE Perturbed: h vs k')
+        plot(h_p, k_p)
+        xlabel('h')
+        ylabel('k')
+        grid on
+        grid minor
+        axis tight
+        axis equal
+        
+        subplot(2,2,3)
+        hold on
+        title('MEE Analytic: h vs k')
+        plot(h_a, k_a)
+        xlabel('h')
+        ylabel('k')
+        grid on
+        grid minor
+        axis tight
+        axis equal
+        
+        subplot(2,2,2)
+        hold on
+        title('MEE Perturbed: p vs q')
+        plot(p_p,q_p)
+        xlabel('p')
+        ylabel('q')
+        grid on
+        grid minor
+        axis tight
+        axis equal
+        
+        subplot(2,2,4)
+        hold on
+        title('MEE Analytic: p vs q')
+        plot(p_a, q_a)
+        xlabel('h')
+        ylabel('k')
+        grid on
+        grid minor
+        axis tight
+        axis equal
+    end
+end
+
+% [h_p, k_p, p_p, q_p] = elm2MEE(e_perturb, i_perturb, w_perturb, OM_perturb);
+% [h_a, k_a, p_a, q_a] = elm2MEE(e_analytic, i_analytic, w_analytic, OM_analytic);
+
+% figure(5)
+% 
+% subplot(2,2,1)
+% hold on
+% title('MEE Perturbed: h vs k')
+% plot(h_p, k_p)
+% xlabel('h')
+% ylabel('k')
+% grid on
+% grid minor
+% axis tight
+% axis equal
+% 
+% subplot(2,2,3)
+% hold on
+% title('MEE Analytic: h vs k')
+% plot(h_a, k_a)
+% xlabel('h')
+% ylabel('k')
+% grid on
+% grid minor
+% axis tight
+% axis equal
+% 
+% subplot(2,2,2)
+% hold on
+% title('MEE Perturbed: p vs q')
+% plot(p_p,q_p)
+% xlabel('p')
+% ylabel('q')
+% grid on
+% grid minor
+% axis tight
+% axis equal
+% 
+% subplot(2,2,4)
+% hold on
+% title('MEE Analytic: p vs q')
+% plot(p_a, q_a)
+% xlabel('h')
+% ylabel('k')
+% grid on
+% grid minor
+% axis tight
+% axis equal
+
+% 
+% %% Plotting
+% figure(3)
+% 
+% subplot(1,2,1)
+% hold on
+% title('Perturbation Solution')
+% plot3(rv_perturb(:,1), rv_perturb(:,2), rv_perturb(:,3))
+% [X,Y,Z] = sphere;
+% val = 0.5; X = X * val; Y = Y * val; Z = Z * val;
+% hsurf = surf(X,Y,Z);
+% set(hsurf,'FaceColor',[0 1 0],'EdgeColor',[0 1 0]);
+% xlabel('X-axis (DU)')
+% ylabel('Y-axis (DU)')
+% zlabel('Z-axis (DU)')
+% grid on
+% grid minor
+% axis tight
+% axis equal
+% 
+% subplot(1,2,2)
+% hold on
+% title('Analytic Solution')
+% plot3(rt(:,1), rt(:,2), rt(:,3))
+% [X,Y,Z] = sphere;
+% val = 0.5; X = X * val; Y = Y * val; Z = Z * val;
+% hsurf = surf(X,Y,Z);
+% set(hsurf,'FaceColor',[0 1 0],'EdgeColor',[0 1 0]);
+% xlabel('X-axis (DU)')
+% ylabel('Y-axis (DU)')
+% zlabel('Z-axis (DU)')
+% grid on
+% grid minor
+% axis tight
+% axis equal
+% % 
+
+
