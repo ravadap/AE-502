@@ -26,7 +26,7 @@ function [kepler_state, rv_state] = analytic_solution(mu, init_vals, tol, pertur
     Lp = L0;
     Gp = G0;
     Hp = H0;
-    lp = 1/(Lp^3) * tspan + l0; lp = lp';
+    lp = -1/(Lp^3) * tspan + l0; lp = lp';
     gp = g0;
     hp = h0;
     

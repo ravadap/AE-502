@@ -93,6 +93,8 @@ perturbs = [0.02, 0.1, 0.5];
 l0 = rand(1,num)*2*pi;
 g0 = rand(1,num)*2*pi;
 h0 = rand(1,num)*2*pi;
+e = rand(1,num);
+i = rand(1,num)*2*pi;
 
 % l0 = linspace(0,2*pi,num);
 % g0 = linspace(0,2*pi,num);
@@ -102,7 +104,7 @@ fig_num = 5;
 
 for jj=5:7
     for ii=1:num
-        init_vals = [a, e, i, l0(ii), g0(ii), h0(ii)];
+        init_vals = [a, e(ii), i(ii), l0(ii), g0(ii), h0(ii)];
     
         [kepler_perturb, rv_perturb] = perturbation_solution(mu, init_vals, tol, perturbs(jj-fig_num+1));
     
@@ -164,8 +166,8 @@ for jj=5:7
         hold on
         title('MEE Analytic: p vs q')
         plot(p_a, q_a)
-        xlabel('h')
-        ylabel('k')
+        xlabel('q')
+        ylabel('p')
         grid on
         grid minor
         axis tight
